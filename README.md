@@ -9,6 +9,24 @@ into conservative rich HTML that you can paste into an Outlook email draft.
 It runs entirely in your browser and includes a live email preview, rich and
 plain-text clipboard formats, file import, and an HTML download.
 
+[Download the latest version of MarkOut](https://github.com/moottoast/markout/releases/latest/download/markout.html)
+
+No installation, account, browser extension, or internet connection is
+required.
+
+![MarkOut showing Markdown beside an Outlook email preview](markout_screenshot.png)
+
+## Download and use MarkOut
+
+Download [`markout.html`](https://github.com/moottoast/markout/releases/latest/download/markout.html),
+save it anywhere on your computer, and double-click it to open MarkOut in your
+browser. Paste or open your Markdown, review the preview, and use Copy for
+Outlook when it is ready.
+
+New versions use the same download link. You can also see every published
+version on the [Releases page](https://github.com/moottoast/markout/releases)
+and read the [changelog](CHANGELOG.md).
+
 ## Privacy model
 
 The application runs entirely in the browser. It has no analytics, telemetry,
@@ -19,25 +37,6 @@ HTML file.
 Remote images are disabled by default. If the user enables them, only
 user-authored `https:` image URLs can load. Local paths and base64 images are
 always replaced with a visible warning.
-
-## Build
-
-Node.js 22.13 or newer is required only for development.
-
-```sh
-npm install
-npm run build
-```
-
-The build produces:
-
-```text
-dist/markout.html
-```
-
-Double-click that file to use the application. The finished file does not need
-Node.js, npm, a server, an extension, an installation, or an internet
-connection.
 
 ## Copy for Outlook
 
@@ -61,15 +60,25 @@ pull requests are welcome:
 
 - [File an issue](https://github.com/moottoast/markout/issues)
 - [Submit a pull request](https://github.com/moottoast/markout/pulls)
+- Read the [contribution and release workflow](CONTRIBUTING.md)
 
 ## Development and tests
 
+Node.js 22.13 or newer is required only for development.
+
 ```sh
+npm install
 npm run dev
-npm run typecheck
-npm test
-npm run build
 ```
+
+The production build produces:
+
+```text
+dist/markout.html
+```
+
+The finished file does not need Node.js, npm, a server, an extension, an
+installation, or an internet connection.
 
 Run every check with:
 
