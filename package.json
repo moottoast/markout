@@ -1,8 +1,17 @@
 {
-  "name": "markdown-for-outlook",
+  "name": "markout",
   "version": "1.0.0",
-  "description": "A private, offline-first Markdown to Outlook email converter.",
+  "description": "An offline-first Markdown to Outlook email converter.",
   "private": true,
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/moottoast/markout.git"
+  },
+  "bugs": {
+    "url": "https://github.com/moottoast/markout/issues"
+  },
+  "homepage": "https://github.com/moottoast/markout#readme",
   "type": "module",
   "engines": {
     "node": ">=22.13.0"

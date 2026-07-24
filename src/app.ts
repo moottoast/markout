@@ -13,7 +13,7 @@ document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
     <div class="brand">
       <span class="brand-mark" aria-hidden="true">M</span>
       <div>
-        <h1>Markdown for Outlook</h1>
+        <h1>MarkOut</h1>
         <p>Write clearly. Paste cleanly.</p>
       </div>
     </div>
@@ -107,8 +107,16 @@ document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
     <div id="status" class="status" role="status" aria-live="polite"></div>
 
     <footer>
-      <p><strong>Privacy:</strong> Your Markdown never leaves this browser.</p>
-      <p>No accounts, analytics, cloud storage, or network calls.</p>
+      <div>
+        <p><strong>Privacy:</strong> Your Markdown never leaves this browser.</p>
+        <p>No accounts, analytics, cloud storage, or network calls.</p>
+      </div>
+      <p>
+        Open source under the MIT License.
+        <a href="https://github.com/moottoast/markout" target="_blank" rel="noopener noreferrer">
+          View MarkOut on GitHub
+        </a>
+      </p>
     </footer>
   </main>
 `;

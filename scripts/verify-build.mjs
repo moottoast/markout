@@ -5,7 +5,7 @@ import { JSDOM } from "jsdom";
 
 const outputDirectory = resolve("dist");
 const files = await readdir(outputDirectory);
-assert.deepEqual(files, ["markdown-for-outlook.html"]);
+assert.deepEqual(files, ["markout.html"]);
 
 const artifactPath = resolve(outputDirectory, files[0]);
 const html = await readFile(artifactPath, "utf8");
@@ -21,5 +21,6 @@ assert.equal(
 );
 assert.equal(document.querySelectorAll("script").length, 1);
 assert.equal(document.querySelectorAll("style").length, 1);
-assert.ok(html.includes("Markdown for Outlook"));
+assert.ok(html.includes("MarkOut"));
 assert.ok(html.includes("Copy for Outlook"));
+assert.ok(html.includes("https://github.com/moottoast/markout"));

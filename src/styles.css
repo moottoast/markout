@@ -413,6 +413,18 @@ footer p {
   margin: 0;
 }
 
+footer div p + p {
+  margin-top: 3px;
+}
+
+footer a {
+  color: #155eef;
+}
+
+footer a:hover {
+  text-decoration-thickness: 2px;
+}
+
 .visually-hidden {
   position: absolute;
   width: 1px;
@@ -569,6 +581,10 @@ footer p {
 
   footer {
     border-color: #303741;
+  }
+
+  footer a {
+    color: #84adff;
   }
 
   .email-preview {

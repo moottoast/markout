@@ -4,5 +4,5 @@ import { resolve } from "node:path";
 const outputDirectory = resolve("dist");
 await rename(
   resolve(outputDirectory, "index.html"),
-  resolve(outputDirectory, "markdown-for-outlook.html"),
+  resolve(outputDirectory, "markout.html"),
 );

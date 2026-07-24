@@ -1,9 +1,13 @@
-# Markdown for Outlook
+# MarkOut
 
-Markdown for Outlook is a private, offline-first browser tool that turns
-Markdown into conservative rich HTML for an Outlook email draft. It includes a
-live email preview, rich and plain-text clipboard formats, file import, and an
-HTML download.
+MarkOut is for any poor suckers who are forced to use Outlook but are currently
+participating in the age of AI. Generative AI artifacts are often created in
+Markdown, but I couldn't find a good way to get that Markdown into Outlook
+without spending more time reformatting everything by hand. MarkOut turns it
+into conservative rich HTML that you can paste into an Outlook email draft.
+
+It runs entirely in your browser and includes a live email preview, rich and
+plain-text clipboard formats, file import, and an HTML download.
 
 ## Privacy model
 
@@ -28,7 +32,7 @@ npm run build
 The build produces:
 
 ```text
-dist/markdown-for-outlook.html
+dist/markout.html
 ```
 
 Double-click that file to use the application. The finished file does not need
@@ -49,6 +53,14 @@ Ctrl+C. It never reports success before a method succeeds.
 
 The copied HTML contains only the email message fragment, not the surrounding
 application.
+
+## Contributing
+
+MarkOut is open source under the [MIT License](LICENSE). Bug reports, ideas, and
+pull requests are welcome:
+
+- [File an issue](https://github.com/moottoast/markout/issues)
+- [Submit a pull request](https://github.com/moottoast/markout/pulls)
 
 ## Development and tests
 
