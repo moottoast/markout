@@ -43,7 +43,7 @@ document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
             <p class="panel-kicker">Compose</p>
             <h2 id="editor-title">Markdown</h2>
           </div>
-          <div class="file-actions">
+          <div class="editor-actions">
             <input
               id="file-input"
               class="visually-hidden"
@@ -52,6 +52,9 @@ document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
             />
             <button id="open-file" class="button button-quiet" type="button">
               Open file
+            </button>
+            <button id="clear-input" class="button button-quiet danger-text" type="button">
+              Clear
             </button>
           </div>
         </div>
@@ -118,9 +121,6 @@ document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
           Download HTML
         </button>
       </div>
-      <button id="clear-input" class="button button-quiet danger-text" type="button">
-        Clear
-      </button>
     </section>
 
     <div id="status" class="status" role="status" aria-live="polite"></div>
