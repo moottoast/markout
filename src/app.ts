@@ -4,6 +4,7 @@ import { readMarkdownFile } from "./file-import";
 import {
   convertMarkdown,
   createDownloadDocument,
+  DEFAULT_FONT_SIZE_PT,
   type ConversionResult,
 } from "./markdown";
 import { SAMPLE_MARKDOWN } from "./sample";
@@ -72,10 +73,28 @@ document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
             <p class="panel-kicker">Review</p>
             <h2 id="preview-title">Email preview</h2>
           </div>
-          <label class="image-toggle">
-            <input id="remote-images" type="checkbox" />
-            <span>Load remote images</span>
-          </label>
+          <div class="preview-settings">
+            <label class="font-size-control" for="default-font-size">
+              <span>Font size</span>
+              <select id="default-font-size">
+                <option value="8">8 pt</option>
+                <option value="9">9 pt</option>
+                <option value="10">10 pt</option>
+                <option value="11">11 pt</option>
+                <option value="${DEFAULT_FONT_SIZE_PT}" selected>${DEFAULT_FONT_SIZE_PT} pt</option>
+                <option value="14">14 pt</option>
+                <option value="16">16 pt</option>
+                <option value="18">18 pt</option>
+                <option value="20">20 pt</option>
+                <option value="22">22 pt</option>
+                <option value="24">24 pt</option>
+              </select>
+            </label>
+            <label class="image-toggle">
+              <input id="remote-images" type="checkbox" />
+              <span>Load remote images</span>
+            </label>
+          </div>
         </div>
         <div
           id="email-preview"
@@ -132,6 +151,8 @@ function requireElement<T extends HTMLElement>(selector: string): T {
 const input = requireElement<HTMLTextAreaElement>("#markdown-input");
 const preview = requireElement<HTMLDivElement>("#email-preview");
 const imageToggle = requireElement<HTMLInputElement>("#remote-images");
+const fontSizeSelect =
+  requireElement<HTMLSelectElement>("#default-font-size");
 const imageWarning = requireElement<HTMLParagraphElement>("#image-warning");
 const characterCount = requireElement<HTMLSpanElement>("#character-count");
 const status = requireElement<HTMLDivElement>("#status");
@@ -160,6 +181,7 @@ function setStatus(
 function render(): void {
   currentResult = convertMarkdown(input.value, {
     allowRemoteImages: imageToggle.checked,
+    defaultFontSizePt: Number(fontSizeSelect.value),
   });
   preview.innerHTML =
     currentResult.html ||
@@ -213,6 +235,14 @@ imageToggle.addEventListener("change", () => {
     imageToggle.checked
       ? "Hosted HTTPS images are enabled for this session."
       : "Remote images are disabled.",
+    "info",
+  );
+});
+
+fontSizeSelect.addEventListener("change", () => {
+  render();
+  setStatus(
+    `Default font size set to ${fontSizeSelect.value} points.`,
     "info",
   );
 });

@@ -23,6 +23,40 @@ describe("Markdown conversion", () => {
     expect(result.html).not.toContain("<style");
   });
 
+  it("uses 12 points by default and scales formatted text proportionally", () => {
+    const defaultResult = convertMarkdown("# Heading\n\nBody with `code`.");
+    const defaultContainer = document.createElement("div");
+    defaultContainer.innerHTML = defaultResult.html;
+
+    expect(
+      (defaultContainer.firstElementChild as HTMLElement).style.fontSize,
+    ).toBe("12pt");
+    expect(defaultContainer.querySelector("p")?.style.fontSize).toBe("12pt");
+    expect(defaultContainer.querySelector("h1")?.style.fontSize).toBe(
+      "20.8pt",
+    );
+    expect(defaultContainer.querySelector("code")?.style.fontSize).toBe(
+      "10.4pt",
+    );
+
+    const smallerResult = convertMarkdown("# Heading\n\nBody with `code`.", {
+      defaultFontSizePt: 11,
+    });
+    const smallerContainer = document.createElement("div");
+    smallerContainer.innerHTML = smallerResult.html;
+
+    expect(
+      (smallerContainer.firstElementChild as HTMLElement).style.fontSize,
+    ).toBe("11pt");
+    expect(smallerContainer.querySelector("p")?.style.fontSize).toBe("11pt");
+    expect(smallerContainer.querySelector("h1")?.style.fontSize).toBe(
+      "19.07pt",
+    );
+    expect(smallerContainer.querySelector("code")?.style.fontSize).toBe(
+      "9.53pt",
+    );
+  });
+
   it("renders nested lists", () => {
     const result = convertMarkdown(
       "- Parent\n  - Child\n    1. First\n    2. Second\n- Sibling",

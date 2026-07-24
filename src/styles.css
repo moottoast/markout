@@ -22,7 +22,8 @@ body {
 
 button,
 textarea,
-input {
+input,
+select {
   font: inherit;
 }
 
@@ -281,6 +282,32 @@ button {
   font-size: 12px;
 }
 
+.preview-settings {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px 14px;
+}
+
+.font-size-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: #475467;
+  font-size: 12px;
+}
+
+.font-size-control select {
+  min-height: 32px;
+  padding: 4px 24px 4px 8px;
+  border: 1px solid #cfd4dc;
+  border-radius: 7px;
+  background: #ffffff;
+  color: #344054;
+  cursor: pointer;
+}
+
 .image-toggle input {
   width: 15px;
   height: 15px;
@@ -323,6 +350,7 @@ button {
 }
 
 .button:focus-visible,
+.font-size-control select:focus-visible,
 .image-toggle input:focus-visible {
   outline: 3px solid rgba(21, 94, 239, 0.27);
   outline-offset: 2px;
@@ -504,6 +532,10 @@ footer a:hover {
     flex-direction: column;
   }
 
+  .preview-settings {
+    justify-content: flex-start;
+  }
+
   .email-preview {
     padding: 22px 18px;
   }
@@ -546,6 +578,7 @@ footer a:hover {
   .intro > div > p:last-child,
   footer,
   .editor-footer,
+  .font-size-control,
   .image-toggle {
     color: #aab2bf;
   }
@@ -561,6 +594,12 @@ footer a:hover {
   }
 
   .button-secondary {
+    border-color: #414a57;
+    background: #222933;
+    color: #e6e9ef;
+  }
+
+  .font-size-control select {
     border-color: #414a57;
     background: #222933;
     color: #e6e9ef;

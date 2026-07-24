@@ -3,6 +3,9 @@ import { marked, Renderer, type Tokens } from "marked";
 
 const EMAIL_FONT = "Aptos, Calibri, Arial, sans-serif";
 const CODE_FONT = "Consolas, 'Courier New', monospace";
+const BASE_BODY_SIZE_PX = 15;
+
+export const DEFAULT_FONT_SIZE_PT = 12;
 
 const ALLOWED_TAGS = [
   "a",
@@ -51,6 +54,7 @@ const ALLOWED_ATTRIBUTES = [
 
 export interface ConversionOptions {
   allowRemoteImages?: boolean;
+  defaultFontSizePt?: number;
 }
 
 export interface ConversionResult {
@@ -92,21 +96,39 @@ function isSafeRemoteImage(value: string): boolean {
 
 const rendererState = new WeakMap<
   OutlookRenderer,
-  { allowRemoteImages: boolean; imageWarnings: number }
+  {
+    allowRemoteImages: boolean;
+    defaultFontSizePt: number;
+    imageWarnings: number;
+  }
 >();
 
 class OutlookRenderer extends Renderer {
-  constructor(allowRemoteImages: boolean) {
+  constructor(allowRemoteImages: boolean, defaultFontSizePt: number) {
     super();
-    rendererState.set(this, { allowRemoteImages, imageWarnings: 0 });
+    rendererState.set(this, {
+      allowRemoteImages,
+      defaultFontSizePt,
+      imageWarnings: 0,
+    });
   }
 
   get imageWarnings(): number {
     return rendererState.get(this)?.imageWarnings ?? 0;
   }
 
+  private fontSize(originalSizePx: number): string {
+    const defaultFontSizePt =
+      rendererState.get(this)?.defaultFontSizePt ?? DEFAULT_FONT_SIZE_PT;
+    const scaledSize =
+      Math.round(
+        ((defaultFontSizePt * originalSizePx) / BASE_BODY_SIZE_PX) * 100,
+      ) / 100;
+    return `${scaledSize}pt`;
+  }
+
   override code({ text }: Tokens.Code): string {
-    return `<pre style="margin: 0 0 16px 0; padding: 12px 14px; border: 1px solid #d6dbe1; background-color: #f5f6f8; color: #202124; font-family: ${CODE_FONT}; font-size: 13px; line-height: 1.5; white-space: pre-wrap; word-wrap: break-word;"><code style="font-family: ${CODE_FONT};">${escapeHtml(text)}</code></pre>`;
+    return `<pre style="margin: 0 0 16px 0; padding: 12px 14px; border: 1px solid #d6dbe1; background-color: #f5f6f8; color: #202124; font-family: ${CODE_FONT}; font-size: ${this.fontSize(13)}; line-height: 1.5; white-space: pre-wrap; word-wrap: break-word;"><code style="font-family: ${CODE_FONT};">${escapeHtml(text)}</code></pre>`;
   }
 
   override blockquote({ tokens }: Tokens.Blockquote): string {
@@ -114,20 +136,20 @@ class OutlookRenderer extends Renderer {
   }
 
   override html({ text }: Tokens.HTML | Tokens.Tag): string {
-    return `<span style="color: #7a2e2e; font-family: ${EMAIL_FONT}; font-size: 13px;">[Raw HTML removed: <code style="font-family: ${CODE_FONT};">${escapeHtml(text)}</code>]</span>`;
+    return `<span style="color: #7a2e2e; font-family: ${EMAIL_FONT}; font-size: ${this.fontSize(13)};">[Raw HTML removed: <code style="font-family: ${CODE_FONT};">${escapeHtml(text)}</code>]</span>`;
   }
 
   override heading({ tokens, depth }: Tokens.Heading): string {
-    const sizes: Record<number, string> = {
-      1: "26px",
-      2: "22px",
-      3: "19px",
-      4: "17px",
-      5: "15px",
-      6: "14px",
+    const sizes: Record<number, number> = {
+      1: 26,
+      2: 22,
+      3: 19,
+      4: 17,
+      5: 15,
+      6: 14,
     };
     const marginTop = depth === 1 ? "0" : "22px";
-    return `<h${depth} style="margin: ${marginTop} 0 10px 0; color: #172033; font-family: ${EMAIL_FONT}; font-size: ${sizes[depth]}; font-weight: 700; line-height: 1.25;">${this.parser.parseInline(tokens)}</h${depth}>`;
+    return `<h${depth} style="margin: ${marginTop} 0 10px 0; color: #172033; font-family: ${EMAIL_FONT}; font-size: ${this.fontSize(sizes[depth])}; font-weight: 700; line-height: 1.25;">${this.parser.parseInline(tokens)}</h${depth}>`;
   }
 
   override hr(): string {
@@ -148,7 +170,7 @@ class OutlookRenderer extends Renderer {
     const checkbox = item.task
       ? `<span style="display: inline-block; margin-right: 7px; color: #374151; font-family: ${EMAIL_FONT};">${item.checked ? "☑" : "☐"}</span>`
       : "";
-    return `<li style="margin: 0 0 6px 0; padding-left: 2px; color: #202124; font-family: ${EMAIL_FONT}; font-size: 15px; line-height: 1.55;">${checkbox}${this.parser.parse(item.tokens)}</li>`;
+    return `<li style="margin: 0 0 6px 0; padding-left: 2px; color: #202124; font-family: ${EMAIL_FONT}; font-size: ${this.fontSize(15)}; line-height: 1.55;">${checkbox}${this.parser.parse(item.tokens)}</li>`;
   }
 
   override checkbox({ checked }: Tokens.Checkbox): string {
@@ -156,7 +178,7 @@ class OutlookRenderer extends Renderer {
   }
 
   override paragraph({ tokens }: Tokens.Paragraph): string {
-    return `<p style="margin: 0 0 16px 0; color: #202124; font-family: ${EMAIL_FONT}; font-size: 15px; line-height: 1.55;">${this.parser.parseInline(tokens)}</p>`;
+    return `<p style="margin: 0 0 16px 0; color: #202124; font-family: ${EMAIL_FONT}; font-size: ${this.fontSize(15)}; line-height: 1.55;">${this.parser.parseInline(tokens)}</p>`;
   }
 
   override table(token: Tokens.Table): string {
@@ -169,7 +191,7 @@ class OutlookRenderer extends Renderer {
           `<tr>${row.map((cell) => this.tablecell({ ...cell, header: false })).join("")}</tr>`,
       )
       .join("");
-    return `<table style="width: 100%; margin: 0 0 18px 0; border-collapse: collapse; border: 1px solid #c7cdd4; font-family: ${EMAIL_FONT}; font-size: 14px; line-height: 1.45;"><thead><tr>${header}</tr></thead><tbody>${rows}</tbody></table>`;
+    return `<table style="width: 100%; margin: 0 0 18px 0; border-collapse: collapse; border: 1px solid #c7cdd4; font-family: ${EMAIL_FONT}; font-size: ${this.fontSize(14)}; line-height: 1.45;"><thead><tr>${header}</tr></thead><tbody>${rows}</tbody></table>`;
   }
 
   override tablecell(token: Tokens.TableCell): string {
@@ -189,7 +211,7 @@ class OutlookRenderer extends Renderer {
   }
 
   override codespan({ text }: Tokens.Codespan): string {
-    return `<code style="padding: 1px 4px; border: 1px solid #d8dce1; background-color: #f3f4f6; color: #7a2430; font-family: ${CODE_FONT}; font-size: 13px;">${escapeHtml(text)}</code>`;
+    return `<code style="padding: 1px 4px; border: 1px solid #d8dce1; background-color: #f3f4f6; color: #7a2430; font-family: ${CODE_FONT}; font-size: ${this.fontSize(13)};">${escapeHtml(text)}</code>`;
   }
 
   override br(): string {
@@ -223,7 +245,7 @@ class OutlookRenderer extends Renderer {
     const reason = isSafeRemoteImage(href)
       ? "Remote image disabled"
       : "Image cannot be copied reliably";
-    return `<span style="display: inline-block; margin: 4px 0 12px 0; padding: 8px 10px; border: 1px solid #d1a24c; background-color: #fff8e6; color: #6b4d13; font-family: ${EMAIL_FONT}; font-size: 13px; line-height: 1.4;">[${reason}: ${escapeHtml(alt)}]</span>`;
+    return `<span style="display: inline-block; margin: 4px 0 12px 0; padding: 8px 10px; border: 1px solid #d1a24c; background-color: #fff8e6; color: #6b4d13; font-family: ${EMAIL_FONT}; font-size: ${this.fontSize(13)}; line-height: 1.4;">[${reason}: ${escapeHtml(alt)}]</span>`;
   }
 
   override text(token: Tokens.Text | Tokens.Escape): string {
@@ -359,14 +381,25 @@ export function convertMarkdown(
     return { html: "", plainText: "", imageWarnings: 0 };
   }
 
-  const renderer = new OutlookRenderer(Boolean(options.allowRemoteImages));
+  const requestedFontSize = options.defaultFontSizePt;
+  const defaultFontSizePt =
+    typeof requestedFontSize === "number" &&
+    Number.isFinite(requestedFontSize) &&
+    requestedFontSize >= 8 &&
+    requestedFontSize <= 72
+      ? requestedFontSize
+      : DEFAULT_FONT_SIZE_PT;
+  const renderer = new OutlookRenderer(
+    Boolean(options.allowRemoteImages),
+    defaultFontSizePt,
+  );
   const rendered = marked.parse(markdown, {
     async: false,
     breaks: true,
     gfm: true,
     renderer,
   }) as string;
-  const wrapped = `<div style="color: #202124; font-family: ${EMAIL_FONT}; font-size: 15px; line-height: 1.55;">${rendered}</div>`;
+  const wrapped = `<div style="color: #202124; font-family: ${EMAIL_FONT}; font-size: ${defaultFontSizePt}pt; line-height: 1.55;">${rendered}</div>`;
   const html = sanitizeEmailHtml(wrapped);
 
   return {
