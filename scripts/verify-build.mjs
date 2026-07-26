@@ -22,5 +22,5 @@ assert.equal(
 assert.equal(document.querySelectorAll("script").length, 1);
 assert.equal(document.querySelectorAll("style").length, 1);
 assert.ok(html.includes("MarkOut"));
-assert.ok(html.includes("Copy for Outlook"));
+assert.ok(html.includes("Copy (Outlook-safe)"));
 assert.ok(html.includes("https://github.com/moottoast/markout"));

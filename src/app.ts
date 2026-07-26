@@ -15,7 +15,7 @@ document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
       <span class="brand-mark" aria-hidden="true">M</span>
       <div>
         <h1>MarkOut</h1>
-        <p>Write clearly. Paste cleanly.</p>
+        <p>Because Outlook still can't be trusted with Markdown.</p>
       </div>
     </div>
     <div class="privacy-badge">
@@ -25,17 +25,6 @@ document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
   </header>
 
   <main class="app-shell">
-    <section class="intro" aria-labelledby="intro-heading">
-      <div>
-        <p class="eyebrow">Local email formatter</p>
-        <h2 id="intro-heading">From Markdown to a polished Outlook draft</h2>
-        <p>Your writing stays in this browser. Nothing is uploaded, stored, or sent.</p>
-      </div>
-      <p class="compatibility-note">
-        Outlook may normalize some spacing, fonts, and colors after paste.
-      </p>
-    </section>
-
     <div class="workspace">
       <section class="panel editor-panel" id="drop-zone" aria-labelledby="editor-title">
         <div class="panel-header">
@@ -63,9 +52,10 @@ document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
           id="markdown-input"
           spellcheck="true"
           aria-describedby="editor-help"
+          placeholder="Paste Markdown, or drop a .md file here."
         ></textarea>
-        <div class="editor-footer">
-          <p id="editor-help">Drop a .md, .markdown, or .txt file anywhere in this panel.</p>
+        <div class="panel-footer">
+          <p id="editor-help" class="visually-hidden">Drop a .md, .markdown, or .txt file anywhere in this panel.</p>
           <span id="character-count">0 characters</span>
         </div>
       </section>
@@ -105,6 +95,9 @@ document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
           tabindex="-1"
           aria-label="Rendered email preview"
         ></div>
+        <div class="panel-footer">
+          <p>Outlook may still re-flow fonts, spacing, or colors after paste.</p>
+        </div>
         <p id="image-warning" class="image-warning" hidden></p>
       </section>
     </div>
@@ -112,7 +105,7 @@ document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
     <section class="action-bar" aria-label="Output actions">
       <div class="primary-actions">
         <button id="copy-outlook" class="button button-primary" type="button">
-          Copy for Outlook
+          Copy (Outlook-safe)
         </button>
         <button id="copy-plain" class="button button-secondary" type="button">
           Copy plain text
@@ -126,14 +119,11 @@ document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
     <div id="status" class="status" role="status" aria-live="polite"></div>
 
     <footer>
-      <div>
-        <p><strong>Privacy:</strong> Your Markdown never leaves this browser.</p>
-        <p>No accounts, analytics, cloud storage, or network calls.</p>
-      </div>
+      <p>No servers, no accounts, no Outlook involved until you paste.</p>
       <p>
-        Open source under the MIT License.
+        MIT-licensed.
         <a href="https://github.com/moottoast/markout" target="_blank" rel="noopener noreferrer">
-          View MarkOut on GitHub
+          View on GitHub
         </a>
       </p>
     </footer>
@@ -185,7 +175,7 @@ function render(): void {
   });
   preview.innerHTML =
     currentResult.html ||
-    '<p class="empty-preview">Your formatted email will appear here.</p>';
+    '<p class="empty-preview">Nothing to preview. Outlook would ruin it anyway.</p>';
   characterCount.textContent = `${input.value.length.toLocaleString()} characters`;
   outputButtons.forEach((button) => {
     button.disabled = !input.value.trim();
@@ -194,8 +184,8 @@ function render(): void {
   imageWarning.hidden = currentResult.imageWarnings === 0;
   imageWarning.textContent =
     currentResult.imageWarnings === 1
-      ? "1 image is shown as a placeholder. Enable remote images to include a hosted HTTPS image."
-      : `${currentResult.imageWarnings} images are shown as placeholders. Enable remote images to include hosted HTTPS images.`;
+      ? "1 image blocked by default — enable remote images if you must."
+      : `${currentResult.imageWarnings} images blocked by default — enable remote images if you must.`;
 }
 
 function selectPreview(): void {
@@ -233,8 +223,8 @@ imageToggle.addEventListener("change", () => {
   render();
   setStatus(
     imageToggle.checked
-      ? "Hosted HTTPS images are enabled for this session."
-      : "Remote images are disabled.",
+      ? "Remote images enabled. Outlook may still block them."
+      : "Remote images disabled.",
     "info",
   );
 });
@@ -290,8 +280,8 @@ requireElement<HTMLButtonElement>("#copy-outlook").addEventListener(
     if (result.success) {
       setStatus(
         result.method === "clipboard-api"
-          ? "Copied rich HTML and plain text for Outlook."
-          : "Copied for Outlook using the browser fallback.",
+          ? "Copied. Outlook can't touch this."
+          : "Copied via fallback. Should still survive Outlook.",
         "success",
       );
       return;
@@ -301,7 +291,7 @@ requireElement<HTMLButtonElement>("#copy-outlook").addEventListener(
     const shortcut =
       navigator.platform.toLowerCase().includes("mac") ? "Command+C" : "Ctrl+C";
     setStatus(
-      `Automatic copy was blocked. The preview is selected. Press ${shortcut}.`,
+      `Automatic copy was blocked. Of course. Preview selected — press ${shortcut}.`,
       "error",
     );
   },
@@ -342,5 +332,5 @@ requireElement<HTMLButtonElement>("#clear-input").addEventListener("click", () =
   input.value = "";
   render();
   input.focus();
-  setStatus("Editor cleared.", "info");
+  setStatus("Cleared.", "info");
 });
