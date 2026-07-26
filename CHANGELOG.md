@@ -7,6 +7,8 @@ and MarkOut uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.0.1] - 2026-07-26
+
 ### Changed
 
 - Redesigned the main page: removed the explanatory intro and footer text
@@ -25,5 +27,6 @@ and MarkOut uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Adjustable preview font size.
 - A self-contained `markout.html` download published through GitHub Releases.
 
-[Unreleased]: https://github.com/moottoast/markout/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/moottoast/markout/compare/v1.0.1...HEAD
+[1.0.1]: https://github.com/moottoast/markout/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/moottoast/markout/releases/tag/v1.0.0
