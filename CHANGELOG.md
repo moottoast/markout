@@ -7,6 +7,13 @@ and MarkOut uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+
+- Redesigned the main page: removed the explanatory intro and footer text
+  blocks in favor of a placeholder-driven editor, a dry one-line tone in
+  the header, status messages, and empty/blocked states, and a compact
+  compatibility note under the preview.
+
 ## [1.0.0] - 2026-07-24
 
 ### Added
