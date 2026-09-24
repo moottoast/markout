@@ -69,6 +69,76 @@ describe("Markdown conversion", () => {
     expect(container.querySelectorAll("li")).toHaveLength(5);
   });
 
+  describe("line spacing", () => {
+    function render(markdown: string): HTMLElement {
+      const container = document.createElement("div");
+      container.innerHTML = convertMarkdown(markdown).html;
+      return container.firstElementChild as HTMLElement;
+    }
+
+    function emptyLines(root: HTMLElement): number {
+      return Array.from(root.querySelectorAll("p")).filter(
+        (paragraph) => paragraph.textContent === "\u00a0",
+      ).length;
+    }
+
+    it("keeps single line breaks single spaced", () => {
+      const root = render("Line one\nLine two\r\nLine three");
+
+      expect(root.querySelectorAll("p")).toHaveLength(1);
+      expect(root.querySelectorAll("br")).toHaveLength(2);
+      expect(emptyLines(root)).toBe(0);
+    });
+
+    it("renders each empty line in the Markdown as one empty line", () => {
+      expect(emptyLines(render("First\n\nSecond"))).toBe(1);
+      expect(emptyLines(render("First\r\n\r\nSecond"))).toBe(1);
+      expect(emptyLines(render("First\n\n\nSecond"))).toBe(2);
+      expect(emptyLines(render("First\n  \nSecond"))).toBe(1);
+      expect(emptyLines(render("Trailing\n\n\n"))).toBe(0);
+    });
+
+    it("adds no space where a new block starts on the next line", () => {
+      const root = render(
+        "# Title\nIntro line\n- One\n- Two\n\n> Quote\n```\ncode\n```\nAfter",
+      );
+
+      expect(emptyLines(root)).toBe(1);
+      root.querySelectorAll<HTMLElement>("h1, p, ul, li, blockquote, pre").forEach(
+        (element) => {
+          expect(element.style.margin).toBe("0px");
+        },
+      );
+    });
+
+    it("follows empty lines between and inside list items and quotes", () => {
+      expect(emptyLines(render("- One\n- Two\n- Three"))).toBe(0);
+      expect(emptyLines(render("- One\n\n- Two\n\n\n- Three"))).toBe(3);
+      expect(emptyLines(render("> First\n>\n> Second"))).toBe(1);
+    });
+
+    it("mirrors the Markdown's empty lines in plain text", () => {
+      expect(
+        convertMarkdown("Line one\nLine two\n\nNext\nIntro\n- One\n- Two")
+          .plainText,
+      ).toBe("Line one\nLine two\n\nNext\nIntro\n- One\n- Two");
+      expect(convertMarkdown("A\n\n\nB").plainText).toBe("A\n\n\nB");
+      expect(convertMarkdown("- One\n\n- Two\n- Three").plainText).toBe(
+        "- One\n\n- Two\n- Three",
+      );
+    });
+
+    it("puts nested list items on their own lines in plain text", () => {
+      expect(
+        convertMarkdown("- Parent\n  - Child\n    1. First\n    2. Second\n- Sibling")
+          .plainText,
+      ).toBe("- Parent\n  - Child\n    1. First\n    2. Second\n- Sibling");
+      expect(
+        convertMarkdown("- Parent\n\n  - Child\n\n- Sibling").plainText,
+      ).toBe("- Parent\n\n  - Child\n\n- Sibling");
+    });
+  });
+
   it("renders GFM tables with explicit cell and table styles", () => {
     const result = convertMarkdown(
       "| Name | State |\n| :--- | ---: |\n| Rowan | Ready |",

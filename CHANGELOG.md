@@ -7,6 +7,14 @@ and MarkOut uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+
+- The email preview no longer adds extra space between lines. Text is single
+  spaced, and each empty line in the Markdown becomes one empty line in the
+  email, including between list items and inside quotes.
+- Copied plain text follows the same spacing and now puts nested list items
+  on their own lines instead of joining them to the parent item.
+
 ## [1.0.1] - 2026-07-26
 
 ### Changed
