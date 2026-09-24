@@ -1,9 +1,10 @@
 import DOMPurify from "dompurify";
-import { marked, Renderer, type Tokens } from "marked";
+import { marked, Renderer, type Token, type Tokens } from "marked";
 
 const EMAIL_FONT = "Aptos, Calibri, Arial, sans-serif";
 const CODE_FONT = "Consolas, 'Courier New', monospace";
 const BASE_BODY_SIZE_PX = 15;
+const LINE_HEIGHT = 1.55;
 
 export const DEFAULT_FONT_SIZE_PT = 12;
 
@@ -94,6 +95,52 @@ function isSafeRemoteImage(value: string): boolean {
   }
 }
 
+interface BlankLineToken extends Tokens.Space {
+  blankLines: number;
+}
+
+function newlineCount(value: string): number {
+  return value.match(/\n/gu)?.length ?? 0;
+}
+
+function trailingNewlineCount(raw: string): number {
+  return newlineCount(raw.match(/\s*$/u)?.[0] ?? "");
+}
+
+// Blocks carry no margins of their own, so vertical space comes only from
+// empty lines in the source. Marked records those inconsistently (sometimes
+// as a trailing newline on the previous block, sometimes as a separate space
+// token), so recount them from the raw text and leave one space token per gap.
+function markBlankLines(tokens: Token[]): Token[] {
+  const result: Token[] = [];
+  let pendingNewlines = 0;
+  for (const token of tokens) {
+    if (token.type === "space") {
+      pendingNewlines += newlineCount(token.raw);
+      continue;
+    }
+    if (result.length > 0 && pendingNewlines > 1) {
+      const gap: BlankLineToken = {
+        type: "space",
+        raw: "\n".repeat(pendingNewlines),
+        blankLines: pendingNewlines - 1,
+      };
+      result.push(gap);
+    }
+    if (token.type === "blockquote") {
+      const quote = token as Tokens.Blockquote;
+      quote.tokens = markBlankLines(quote.tokens);
+    } else if (token.type === "list") {
+      for (const item of (token as Tokens.List).items) {
+        item.tokens = markBlankLines(item.tokens);
+      }
+    }
+    result.push(token);
+    pendingNewlines = trailingNewlineCount(token.raw);
+  }
+  return result;
+}
+
 const rendererState = new WeakMap<
   OutlookRenderer,
   {
@@ -127,12 +174,22 @@ class OutlookRenderer extends Renderer {
     return `${scaledSize}pt`;
   }
 
+  private emptyLines(count: number): string {
+    return `<p style="margin: 0; color: #202124; font-family: ${EMAIL_FONT}; font-size: ${this.fontSize(15)}; line-height: ${LINE_HEIGHT};">&nbsp;</p>`.repeat(
+      count,
+    );
+  }
+
+  override space(token: Tokens.Space): string {
+    return this.emptyLines((token as BlankLineToken).blankLines ?? 0);
+  }
+
   override code({ text }: Tokens.Code): string {
-    return `<pre style="margin: 0 0 16px 0; padding: 12px 14px; border: 1px solid #d6dbe1; background-color: #f5f6f8; color: #202124; font-family: ${CODE_FONT}; font-size: ${this.fontSize(13)}; line-height: 1.5; white-space: pre-wrap; word-wrap: break-word;"><code style="font-family: ${CODE_FONT};">${escapeHtml(text)}</code></pre>`;
+    return `<pre style="margin: 0; padding: 12px 14px; border: 1px solid #d6dbe1; background-color: #f5f6f8; color: #202124; font-family: ${CODE_FONT}; font-size: ${this.fontSize(13)}; line-height: 1.5; white-space: pre-wrap; word-wrap: break-word;"><code style="font-family: ${CODE_FONT};">${escapeHtml(text)}</code></pre>`;
   }
 
   override blockquote({ tokens }: Tokens.Blockquote): string {
-    return `<blockquote style="margin: 0 0 16px 0; padding: 2px 0 2px 14px; border-left: 4px solid #9aa4b2; color: #4b5563;">${this.parser.parse(tokens)}</blockquote>`;
+    return `<blockquote style="margin: 0; padding: 2px 0 2px 14px; border-left: 4px solid #9aa4b2; color: #4b5563;">${this.parser.parse(tokens)}</blockquote>`;
   }
 
   override html({ text }: Tokens.HTML | Tokens.Tag): string {
@@ -148,12 +205,11 @@ class OutlookRenderer extends Renderer {
       5: 15,
       6: 14,
     };
-    const marginTop = depth === 1 ? "0" : "22px";
-    return `<h${depth} style="margin: ${marginTop} 0 10px 0; color: #172033; font-family: ${EMAIL_FONT}; font-size: ${this.fontSize(sizes[depth])}; font-weight: 700; line-height: 1.25;">${this.parser.parseInline(tokens)}</h${depth}>`;
+    return `<h${depth} style="margin: 0; color: #172033; font-family: ${EMAIL_FONT}; font-size: ${this.fontSize(sizes[depth])}; font-weight: 700; line-height: 1.25;">${this.parser.parseInline(tokens)}</h${depth}>`;
   }
 
   override hr(): string {
-    return '<hr style="margin: 22px 0; border: 0; border-top: 1px solid #cbd1d8;">';
+    return '<hr style="margin: 0; border: 0; border-top: 1px solid #cbd1d8;">';
   }
 
   override list(token: Tokens.List): string {
@@ -162,15 +218,23 @@ class OutlookRenderer extends Renderer {
       token.ordered && token.start !== "" && token.start !== 1
         ? ` start="${token.start}"`
         : "";
-    const items = token.items.map((item) => this.listitem(item)).join("");
-    return `<${tag}${start} style="margin: 0 0 16px 0; padding-left: 28px; font-family: ${EMAIL_FONT};">${items}</${tag}>`;
+    const lastIndex = token.items.length - 1;
+    const items = token.items
+      .map((item, index) =>
+        this.listitem(
+          item,
+          index < lastIndex ? trailingNewlineCount(item.raw) - 1 : 0,
+        ),
+      )
+      .join("");
+    return `<${tag}${start} style="margin: 0; padding-left: 28px; font-family: ${EMAIL_FONT};">${items}</${tag}>`;
   }
 
-  override listitem(item: Tokens.ListItem): string {
+  override listitem(item: Tokens.ListItem, blankLinesAfter = 0): string {
     const checkbox = item.task
       ? `<span style="display: inline-block; margin-right: 7px; color: #374151; font-family: ${EMAIL_FONT};">${item.checked ? "☑" : "☐"}</span>`
       : "";
-    return `<li style="margin: 0 0 6px 0; padding-left: 2px; color: #202124; font-family: ${EMAIL_FONT}; font-size: ${this.fontSize(15)}; line-height: 1.55;">${checkbox}${this.parser.parse(item.tokens)}</li>`;
+    return `<li style="margin: 0; padding-left: 2px; color: #202124; font-family: ${EMAIL_FONT}; font-size: ${this.fontSize(15)}; line-height: ${LINE_HEIGHT};">${checkbox}${this.parser.parse(item.tokens)}${this.emptyLines(Math.max(blankLinesAfter, 0))}</li>`;
   }
 
   override checkbox({ checked }: Tokens.Checkbox): string {
@@ -178,7 +242,7 @@ class OutlookRenderer extends Renderer {
   }
 
   override paragraph({ tokens }: Tokens.Paragraph): string {
-    return `<p style="margin: 0 0 16px 0; color: #202124; font-family: ${EMAIL_FONT}; font-size: ${this.fontSize(15)}; line-height: 1.55;">${this.parser.parseInline(tokens)}</p>`;
+    return `<p style="margin: 0; color: #202124; font-family: ${EMAIL_FONT}; font-size: ${this.fontSize(15)}; line-height: ${LINE_HEIGHT};">${this.parser.parseInline(tokens)}</p>`;
   }
 
   override table(token: Tokens.Table): string {
@@ -191,7 +255,7 @@ class OutlookRenderer extends Renderer {
           `<tr>${row.map((cell) => this.tablecell({ ...cell, header: false })).join("")}</tr>`,
       )
       .join("");
-    return `<table style="width: 100%; margin: 0 0 18px 0; border-collapse: collapse; border: 1px solid #c7cdd4; font-family: ${EMAIL_FONT}; font-size: ${this.fontSize(14)}; line-height: 1.45;"><thead><tr>${header}</tr></thead><tbody>${rows}</tbody></table>`;
+    return `<table style="width: 100%; margin: 0; border-collapse: collapse; border: 1px solid #c7cdd4; font-family: ${EMAIL_FONT}; font-size: ${this.fontSize(14)}; line-height: 1.45;"><thead><tr>${header}</tr></thead><tbody>${rows}</tbody></table>`;
   }
 
   override tablecell(token: Tokens.TableCell): string {
@@ -236,7 +300,7 @@ class OutlookRenderer extends Renderer {
     const state = rendererState.get(this);
     if (state?.allowRemoteImages && isSafeRemoteImage(href)) {
       const titleAttribute = title ? ` title="${escapeHtml(title)}"` : "";
-      return `<img src="${escapeHtml(href.trim())}" alt="${escapeHtml(alt)}"${titleAttribute} style="display: block; max-width: 100%; height: auto; margin: 8px 0 16px 0; border: 0;">`;
+      return `<img src="${escapeHtml(href.trim())}" alt="${escapeHtml(alt)}"${titleAttribute} style="display: block; max-width: 100%; height: auto; margin: 0; border: 0;">`;
     }
 
     if (state) {
@@ -245,7 +309,7 @@ class OutlookRenderer extends Renderer {
     const reason = isSafeRemoteImage(href)
       ? "Remote image disabled"
       : "Image cannot be copied reliably";
-    return `<span style="display: inline-block; margin: 4px 0 12px 0; padding: 8px 10px; border: 1px solid #d1a24c; background-color: #fff8e6; color: #6b4d13; font-family: ${EMAIL_FONT}; font-size: ${this.fontSize(13)}; line-height: 1.4;">[${reason}: ${escapeHtml(alt)}]</span>`;
+    return `<span style="display: inline-block; margin: 0; padding: 8px 10px; border: 1px solid #d1a24c; background-color: #fff8e6; color: #6b4d13; font-family: ${EMAIL_FONT}; font-size: ${this.fontSize(13)}; line-height: 1.4;">[${reason}: ${escapeHtml(alt)}]</span>`;
   }
 
   override text(token: Tokens.Text | Tokens.Escape): string {
@@ -308,7 +372,10 @@ function appendTextWithBreaks(root: HTMLElement): string {
       return "\n";
     }
     if (node.tagName === "HR") {
-      return "\n---\n";
+      return "---\n";
+    }
+    if (node.tagName === "P" && node.textContent === "\u00a0") {
+      return "\n";
     }
     if (node.tagName === "IMG") {
       return `[Image: ${node.getAttribute("alt") || "Image"}]`;
@@ -320,11 +387,20 @@ function appendTextWithBreaks(root: HTMLElement): string {
         .filter((child) => child.tagName === "LI")
         .map((child, index) => {
           const prefix = ordered ? `${start + index}. ` : "- ";
-          const content = Array.from(child.childNodes)
-            .map((part) => visit(part, listDepth + 1))
-            .join("")
-            .trim();
-          return `${"  ".repeat(listDepth)}${prefix}${content}`;
+          const content = Array.from(child.childNodes).reduce((text, part) => {
+            const partText = visit(part, listDepth + 1);
+            // A nested list starts on its own line below the item's text.
+            const isList = part.nodeName === "UL" || part.nodeName === "OL";
+            return isList && text && !text.endsWith("\n")
+              ? `${text}\n${partText}`
+              : text + partText;
+          }, "");
+          const body = content.trim();
+          const blankLinesAfter = Math.max(
+            newlineCount(content.slice(content.trimEnd().length)) - 1,
+            0,
+          );
+          return `${"  ".repeat(listDepth)}${prefix}${body}${"\n".repeat(blankLinesAfter)}`;
         })
         .join("\n")
         .concat("\n");
@@ -355,15 +431,14 @@ function appendTextWithBreaks(root: HTMLElement): string {
         .map((line) => `> ${line}`)
         .join("\n");
     }
-    if (blockTags.has(node.tagName)) {
-      text += "\n\n";
+    if (blockTags.has(node.tagName) && !text.endsWith("\n")) {
+      text += "\n";
     }
     return text;
   }
 
   return visit(root)
     .replace(/[ \t]+\n/gu, "\n")
-    .replace(/\n{3,}/gu, "\n\n")
     .trim();
 }
 
@@ -393,13 +468,10 @@ export function convertMarkdown(
     Boolean(options.allowRemoteImages),
     defaultFontSizePt,
   );
-  const rendered = marked.parse(markdown, {
-    async: false,
-    breaks: true,
-    gfm: true,
-    renderer,
-  }) as string;
-  const wrapped = `<div style="color: #202124; font-family: ${EMAIL_FONT}; font-size: ${defaultFontSizePt}pt; line-height: 1.55;">${rendered}</div>`;
+  const markedOptions = { async: false, breaks: true, gfm: true, renderer };
+  const tokens = markBlankLines(marked.lexer(markdown, markedOptions));
+  const rendered = marked.parser(tokens, markedOptions);
+  const wrapped = `<div style="color: #202124; font-family: ${EMAIL_FONT}; font-size: ${defaultFontSizePt}pt; line-height: ${LINE_HEIGHT};">${rendered}</div>`;
   const html = sanitizeEmailHtml(wrapped);
 
   return {
