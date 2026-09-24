@@ -68,10 +68,21 @@ Node.js 22.13 or newer is required only for development.
 
 ```sh
 npm install
+```
+
+To work on MarkOut with live reload, start the development server:
+
+```sh
 npm run dev
 ```
 
-The production build produces:
+To produce the finished single-file app, run the production build:
+
+```sh
+npm run build
+```
+
+The build produces:
 
 ```text
 dist/markout.html
