@@ -1,6 +1,6 @@
 {
   "name": "markout",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "An offline-first Markdown to Outlook email converter.",
   "private": true,
   "license": "MIT",
